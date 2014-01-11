@@ -25,7 +25,7 @@ CC = gcc
 INCLUDE = -I. -I $(EMPL_DIR) -I $(GLUE_DIR) -I $(MPU_DIR)
 # add -DI2C_DEBUG for debugging
 DEFS = -DEMPL_TARGET_LINUX -DMPU9150 -DAK8975_SECONDARY
-CFLAGS = -Wall $(INCLUDE) -fsingle-precision-constant $(DEFS)
+CFLAGS = -fPIC -Wall $(INCLUDE) -fsingle-precision-constant $(DEFS)
 
 .PHONY: all
 all : $(STATIC)
