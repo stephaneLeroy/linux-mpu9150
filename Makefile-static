@@ -1,0 +1,71 @@
+#
+# Makefile linux-mpu9150
+#
+DESTDIR=/usr
+PREFIX=/local
+
+STATIC=libmpu9150.a
+
+EMPL_DIR = eMPL
+EMPL_SRC = $(EMPL_DIR)/inv_mpu.c \
+           $(EMPL_DIR)/inv_mpu_dmp_motion_driver.c
+EMPL_OBJ = $(EMPL_SRC:.c=.o)
+
+GLUE_DIR = glue
+GLUE_SRC = $(GLUE_DIR)/linux_glue.c
+GLUE_OBJ = $(GLUE_SRC:.c=.o)
+
+MPU_DIR  = mpu9150
+MPU_SRC  = $(MPU_DIR)/mpu9150.c \
+           $(MPU_DIR)/quaternion.c \
+           $(MPU_DIR)/vector3d.c
+MPU_OBJ  = $(MPU_SRC:.c=.o)
+
+CC = gcc
+INCLUDE = -I. -I $(EMPL_DIR) -I $(GLUE_DIR) -I $(MPU_DIR)
+# add -DI2C_DEBUG for debugging
+DEFS = -DEMPL_TARGET_LINUX -DMPU9150 -DAK8975_SECONDARY
+CFLAGS = -Wall $(INCLUDE) -fsingle-precision-constant $(DEFS)
+
+.PHONY: all
+all : $(STATIC)
+
+.c.o:
+	@echo [Compile] $<
+	@$(CC) -c $(CFLAGS) $< -o $@
+
+$(STATIC): $(EMPL_OBJ) $(GLUE_OBJ) $(MPU_OBJ)
+	@echo "[Link (Static)]"
+	@ar rcs $(STATIC) $(EMPL_OBJ) $(GLUE_OBJ) $(MPU_OBJ)
+	@ranlib $(STATIC)
+
+.PHONY: clean
+clean:
+	rm -f $(EMPL_OBJ) $(GLUE_OBJ) $(MPU_OBJ) $(STATIC) *~ core tags Makefile.bak
+
+.PHONY: tags
+tags: $(EMPL_SRC) $(GLUE_SRC) $(MPU_SRC)
+	@echo [ctags]
+	@ctags $(EMPL_SRC) $(GLUE_SRC) $(MPU_SRC)
+
+.PHONY: depend
+depend:
+	makedepend -Y $(EMPL_SRC) $(GLUE_SRC) $(MPU_SRC)
+
+.PHONEY: install
+install: $(STATIC)
+	@echo "[Install]"
+	@install -m 0755 -d                        $(DESTDIR)$(PREFIX)/lib
+	@install -m 0755 -d                        $(DESTDIR)$(PREFIX)/include
+	@install -m 0644 ./$(MPU_DIR)/mpu9150.h    $(DESTDIR)$(PREFIX)/include
+	@install -m 0644 ./$(MPU_DIR)/quaternion.h $(DESTDIR)$(PREFIX)/include
+	@install -m 0644 ./$(MPU_DIR)/vector3d.h   $(DESTDIR)$(PREFIX)/include
+	@install -m 0644 $(STATIC)                 $(DESTDIR)$(PREFIX)/lib
+
+.PHONEY: uninstall
+uninstall:
+	@echo "[UnInstall]"
+	@rm -f $(DESTDIR)$(PREFIX)/include/mpu9150.h
+	@rm -f $(DESTDIR)$(PREFIX)/include/quaternion.h
+	@rm -f $(DESTDIR)$(PREFIX)/include/vector3d.h
+
